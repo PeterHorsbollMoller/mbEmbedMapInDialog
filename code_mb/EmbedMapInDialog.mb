@@ -19,7 +19,7 @@ Include "Library\RibbonElements.def"
 
 Define xProgram 		"EmbedMapInDialog"
 Define xProgramMenu		"EmbedMapInDialog"
-Define xVersion 		"1.0"
+Define xVersion 		"1.0.1"
 Define xYear			"2019"
 Define xAddToMenuBar	FALSE
 
@@ -35,7 +35,6 @@ Include "Library\ProgramInfo.def"
 Include "Library\RIBBONLib.def"
 Include "Library\TABLELib.def"
 Include "Library\WINDOWLib.def"
-'Include "Library\WINAPI 1522.def"
 
 '-----------------------------------------------------------------------------------------
 Declare Sub Main
