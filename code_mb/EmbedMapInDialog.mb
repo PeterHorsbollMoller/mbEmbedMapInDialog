@@ -1,0 +1,268 @@
+﻿'*******************************************************************************
+'**   Created by Peter Horsbøll Møller, Pitney Bowes
+'** 	Program:
+'** 	Modul:
+'**
+'*******************************************************************************
+
+'-------------------------------------
+Include "Enums.def"
+Include "Icons.def"
+Include "MapBasic.def"
+Include "Menu.def"
+Include "IMapInfoPro.def"
+'**default constants...
+'**default constants...
+Include "Library\Defaults.def"
+Include "Library\MI_ICONS_X64.def"
+Include "Library\RibbonElements.def"
+
+Define xProgram 		"EmbedMapInDialog"
+Define xProgramMenu		"EmbedMapInDialog"
+Define xVersion 		"1.0"
+Define xYear			"2019"
+Define xAddToMenuBar	FALSE
+
+Define FILE_INI			GetFolderPath$(FOLDER_MI_PREFERENCE) & xProgram & ".ini"
+Define FILE_DBG			ApplicationDirectory$() & xProgram & ".dbg"
+'Define FILE_DLL			ApplicationDirectory$() & xProgram & ".dll"
+Define FILE_PAD			GetFolderPath$(FOLDER_MI_PREFERENCE) & xProgram & ".btp"
+
+'-------------------------------------
+Include "Library\DEBUGLib.def"
+Include "Library\ERRORLib.def"
+Include "Library\ProgramInfo.def"
+Include "Library\RIBBONLib.def"
+Include "Library\TABLELib.def"
+Include "Library\WINDOWLib.def"
+'Include "Library\WINAPI 1522.def"
+
+'-----------------------------------------------------------------------------------------
+Declare Sub Main
+Declare Sub EndProgram
+Declare Sub EndHandler
+
+Declare Sub MENUEmbedFrontWindow
+Declare Sub MENUEmbedFrontWindow_OnLoad
+Declare Sub MENUEmbedBrowser
+Declare Sub MENUEmbedBrowser_OnLoad
+
+Define	CTRL_DOC_WINDOW	100
+
+Dim	mnWID, mnWIDEmbedded As Integer
+
+'**********************************************************************************************''
+'**   Created by Peter Horsbøll Møller, Pitney Bowes
+'
+'**********************************************************************************************''
+Sub Main
+
+Dim	nCtrlIdx As Integer,
+	sTabName, sGroupName As String
+
+OnError GoTo ErrorOccured
+
+	'***Initializing ApplicationInfo
+	Call PRGISetApplicationName(xProgram)
+	Call PRGISetApplicationVersion(xVersion)
+	Call PRGISetApplicationCopyrightYear(xYear)
+	Call PRGISetApplicationDevelopedBy("Peter Horsbøll Møller")
+
+	'***Enabling Debug if file exists
+	Call DEBUGEnableByFile(FILE_DBG)
+
+	Alter Menu ID 4 Add
+		"Show FrontWindow in a dialog..."
+			HelpMsg ""
+			Calling MENUEmbedFrontWindow
+
+	sTabName				= TAB_HOME
+	sGroupName			= TAB_GROUP_HOME_RECOVER_WINDOWS
+
+	nCtrlIdx = RBNGroupAddButton("btnEmbedWindowInDialog", "Embed Window", "", sTabName, sGroupName)
+	If nCtrlIdx > 0 Then
+		'Create & Set the button tooltip
+		Call RBNControlSetToolTipIdx(nCtrlIdx, PRGIGetApplicationName(), "Embed active window in a dialog.", "")
+		'Set the button icon
+		Call RBNControlSetIconsIdx(nCtrlIdx, CONTROL_SIZE_SMALL, MI_IMG_WIN_RECOVERWINDOWS_16, MI_IMG_WIN_RECOVERWINDOWS_32)
+		'Set Custom MapBasic Handle to the button
+		Call RBNControlSetCustomMBXHandlerIdx(nCtrlIdx, "MENUEmbedFrontWindow")
+	End If
+	nCtrlIdx = RBNGroupAddButton("btnEmbedBrowserInDialog", "Embed Browser", "", sTabName, sGroupName)
+	If nCtrlIdx > 0 Then
+		'Create & Set the button tooltip
+		Call RBNControlSetToolTipIdx(nCtrlIdx, PRGIGetApplicationName(), "Embed browser in a dialog.", "")
+		'Set the button icon
+		Call RBNControlSetIconsIdx(nCtrlIdx, CONTROL_SIZE_SMALL, MI_IMG_WIN_RECOVERWINDOWS_16, MI_IMG_WIN_RECOVERWINDOWS_32)
+		'Set Custom MapBasic Handle to the button
+		Call RBNControlSetCustomMBXHandlerIdx(nCtrlIdx, "MENUEmbedBrowser")
+	End If
+
+	Open Table ApplicationDirectory$() & "Municipalities.tab" View Automatic
+
+	Call MENUEmbedFrontWindow
+	Call MENUEmbedBrowser
+
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "Main")
+	Call ERRShow()
+
+End Sub
+
+'****************************************
+'**   Created by Peter Horsbøll Møller, Pitney Bowes
+'**   Ending MapBasic application
+'****************************************
+Sub EndProgram
+
+OnError GoTo ErrorOccured
+
+	End Program
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "EndProgram")
+	Call ERRShow()
+
+End Sub
+
+'****************************************
+'**   Created by Peter Horsbøll Møller, Pitney Bowes
+'**   Ending MapBasic application
+'****************************************
+Sub EndHandler
+
+OnError GoTo ErrorOccured
+
+	Call RBNEndHandler
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "EndProgram")
+	Call ERRShow()
+
+End Sub
+
+'**********************************************************************************************''
+'Created by Peter Horsbøll Møller, Pitney Bowes
+'Parameters:
+'
+'**********************************************************************************************''
+Sub MENUEmbedFrontWindow
+
+OnError GoTo ErrorOccured
+
+	mnWID = FrontWindow()
+	If mnWID = 0 Then
+		Note "No window open!"
+		Exit Sub
+	End If
+
+	Dialog
+		Title "Embed Front Window"
+		Calling MENUEmbedFrontWindow_OnLoad
+
+		Control DocumentWindow		ID CTRL_DOC_WINDOW
+			Position 5,5
+			Width 300	Height 300
+
+		Control OKButton
+		Control CancelButton
+
+	If WINExists(mnWIDEmbedded) Then
+		Print "Closing window '" & WindowInfo(mnWIDEmbedded, WIN_INFO_NAME) & "'"
+		Close Window mnWIDEmbedded
+		mnWIDEmbedded = 0
+	End If
+
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "MENUEmbedFrontWindow")
+	Call ERRShow()
+
+End Sub
+
+'**********************************************************************************************''
+'Created by Peter Horsbøll Møller, Pitney Bowes
+'Parameters:
+'
+'**********************************************************************************************''
+Sub MENUEmbedFrontWindow_OnLoad
+
+OnError GoTo ErrorOccured
+
+	Print Time(24) & ": Embedding window now "
+	mnWIDEmbedded = WINCreateForDocumentControl(CTRL_DOC_WINDOW, WindowInfo(mnWID, WIN_INFO_CLONEWINDOW))
+	Print Time(24) & ": Embedded Window ID: " & mnWIDEmbedded
+	If mnWIDEmbedded > 0 Then
+		Print Time(24) & ":    Embedded Window Name: " & WindowInfo(mnWIDEmbedded, WIN_INFO_NAME)
+	End If
+
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "MENUEmbedFrontWindow_OnLoad")
+	Call ERRShow()
+
+End Sub
+
+'**********************************************************************************************''
+'Created by Peter Horsbøll Møller, Pitney Bowes
+'Parameters:
+'
+'**********************************************************************************************''
+Sub MENUEmbedBrowser
+
+OnError GoTo ErrorOccured
+
+	Dialog
+		Title "Embed browser"
+		Calling MENUEmbedBrowser_OnLoad
+
+		Control DocumentWindow		ID CTRL_DOC_WINDOW
+			Position 5,5
+			Width 300	Height 300
+
+		Control OKButton
+		Control CancelButton
+
+	If WINExists(mnWIDEmbedded) Then
+		Print "Closing window '" & WindowInfo(mnWIDEmbedded, WIN_INFO_NAME) & "'"
+		Close Window mnWIDEmbedded
+		mnWIDEmbedded = 0
+	End If
+
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "MENUEmbedBrowser")
+	Call ERRShow()
+
+End Sub
+
+'**********************************************************************************************''
+'Created by Peter Horsbøll Møller, Pitney Bowes
+'Parameters:
+'
+'**********************************************************************************************''
+Sub MENUEmbedBrowser_OnLoad
+
+OnError GoTo ErrorOccured
+
+	Print Time(24) & ": Embedding window now "
+	mnWIDEmbedded = WINCreateForDocumentControl(CTRL_DOC_WINDOW, "Browse * From " & TableInfo(NumTables(), TAB_INFO_NAME))
+	Print Time(24) & ": Embedded Window ID: " & mnWIDEmbedded
+	If mnWIDEmbedded > 0 Then
+		Print Time(24) & ":    Embedded Window Name: " & WindowInfo(mnWIDEmbedded, WIN_INFO_NAME)
+	End If
+
+	Exit Sub
+'-------------------------
+ErrorOccured:
+	Call ERRCreate(Err(), Error$(), "MENUEmbedBrowser_OnLoad")
+	Call ERRShow()
+
+End Sub
